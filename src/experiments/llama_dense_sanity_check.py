@@ -1,3 +1,4 @@
+from audioop import add
 import torch
 from huggingface_hub import snapshot_download
 from transformers import AutoTokenizer, PreTrainedTokenizer
@@ -7,6 +8,8 @@ from core.models.dense.llama_dense_model import ModelConfig, Transformer
 from core.utils.device import DEVICE, DTYPE
 
 model_name = "meta-llama/Llama-3.1-8B-Instruct"
+
+print(f"Downloading model weights for {model_name}...")
 model_dir = snapshot_download(repo_id=model_name)
 
 config = ModelConfig()
@@ -30,17 +33,16 @@ conversation = [
     {"role": "user", "content": user_prompt},
 ]
 
+print("Model loaded. Downloading tokenizer...")
 tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
 
-batch = tokenizer.apply_chat_template(conversation, return_tensors="pt", return_dict=True)
+input_ids = tokenizer.apply_chat_template(conversation, add_special_tokens=True, return_tensors="pt")
+input_ids = input_ids.to(DEVICE)
 
-input_ids = batch["input_ids"].to(model.device)
-attention_mask = batch["attention_mask"].to(model.device)
-
+print("Starting text generation...")
 with torch.no_grad():
     while True:
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-        logits = outputs.logits
+        logits = model(input_ids)
 
         predicted_token_id = torch.argmax(logits[0, -1, :]).item()
         predicted_token = tokenizer.decode([predicted_token_id])
@@ -49,4 +51,3 @@ with torch.no_grad():
         if predicted_token_id == tokenizer.eos_token_id:
             break
         input_ids = torch.cat([input_ids, torch.tensor([[predicted_token_id]], device=input_ids.device)], dim=-1)
-        attention_mask = torch.cat([attention_mask, torch.tensor([[1]], device=attention_mask.device)], dim=-1)
