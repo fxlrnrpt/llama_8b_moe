@@ -4,7 +4,7 @@ import os
 import torch
 from safetensors.torch import load_file as safetensors_load_file
 
-mapping = {
+dense_mapping = {
     ".mlp": ".ffn",
     ".post_attention_layernorm": ".ffn_norm",
     ".input_layernorm": ".attn_norm",
@@ -18,6 +18,7 @@ def load_weights(
     device: torch.device | None = None,
     strict: bool = False,
     verbose: bool = True,
+    mapping: dict[str, str] = dense_mapping,
 ):
     """
     Minimal loader for a model whose weights are sharded across multiple safetensors files.
