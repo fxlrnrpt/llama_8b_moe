@@ -71,20 +71,6 @@ def load_weights(
         "shards": shard_files,
     }
 
-    if not sd:
-        for name, tensor in model.state_dict().items():
-            if tensor.is_floating_point():
-                rand = torch.randn_like(tensor)
-            else:
-                rand = torch.zeros_like(tensor)
-
-            if dtype is not None and rand.is_floating_point():
-                rand = rand.to(dtype)
-            if device is not None:
-                rand = rand.to(device)
-
-            sd[name] = rand
-
     # Load state_dict into model
     missing, unexpected = model.load_state_dict(sd, strict=strict)
     model.to(device=device)
