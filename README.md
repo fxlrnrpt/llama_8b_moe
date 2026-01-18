@@ -5,6 +5,6 @@
 - [x] Toy mode that matches the output of the dense model
 - [x] Test to check the logit match 
 - [x] Try a better dense FFN replica
-- [ ] Learned experts
+- [x] Init learned experts
 - [ ] MoE router
-- [ ] Distill
+- [ ] Train learned experts

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import torch
@@ -18,6 +19,7 @@ torch.manual_seed(42)
 print(f"Downloading model weights for {MODEL_NAME}...")
 model_dir = snapshot_download(repo_id=MODEL_NAME)
 
+print("Initializing MoE model...")
 config = MoEModelConfig(routing="match_dense")
 model = MoETransformer(config)
 
@@ -30,7 +32,7 @@ num_learned_experts = config.num_learned_experts
 expert_size = config.expert_intermediate_size
 
 # Noise scale relative to weight standard deviation
-NOISE_SCALE = 0.01
+NOISE_SCALE = 0.2
 
 with torch.no_grad():
     dense_ffns_converted = 0
@@ -71,7 +73,9 @@ with torch.no_grad():
 
     print(f"Converted {dense_ffns_converted} dense FFNs to sliced MoE FFNs.")
     print(f"  - Experts 0-{num_sliced_experts - 1}: exact slices of dense FFN")
-    print(f"  - Experts {num_sliced_experts}-{num_sliced_experts + num_learned_experts - 1}: noisy slices (noise scale={NOISE_SCALE})")
+    print(
+        f"  - Experts {num_sliced_experts}-{num_sliced_experts + num_learned_experts - 1}: noisy slices (noise scale={NOISE_SCALE})"
+    )
 
 print("Model loaded. Downloading tokenizer...")
 tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -79,9 +83,15 @@ tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 input_ids = get_sanity_check_input_ids(tokenizer)
 input_ids = input_ids.to(DEVICE)
 
-print("Starting text generation...")
+print("\n\nStarting text generation in logit match mode...\n")
 generate(model, tokenizer, input_ids)
 
-print("Saving MoE version...")
-save_file(model.state_dict(), Path(__file__).parent.joinpath("../../../artifacts/llama3_8b_moe.safetensors"))
+print("\n\nStarting text generation in learned_only mode...\n")
+model.switch_routing("learned_only")
+generate(model, tokenizer, input_ids)
+
+print("\n\nSaving MoE version...")
+save_path = Path(__file__).parent.joinpath("../../../artifacts/llama3_8b_moe.safetensors").resolve()
+os.makedirs(save_path.parent, exist_ok=True)
+save_file(model.state_dict(), save_path)
 print("Done.")

@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "hf-transfer>=0.1.9",
+    "huggingface-hub>=0.36.0",
     "ipykernel>=7.1.0",
     "safetensors>=0.7.0",
     "torch>=2.9.1",
@@ -19,4 +21,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/core"
+]
+
+[tool.pyrefly]
+project-includes = [
+    "src/**/*.py*",
+    "src/**/*.ipynb",
 ]

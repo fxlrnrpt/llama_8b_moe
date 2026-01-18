@@ -20,3 +20,6 @@
 8. Yay! Still works. This time with acceptable numerical fluctations: `Logit match test passed. Max differences per sample: [0.000247955322265625, 0.0002758502960205078, 0.000232696533203125, 0.0003854334354400635, 0.00037860870361328125]`. With this architecture we can have a much smaller memory footprint if wanted.
 9. Had a brilliant idea - what if we use SVD to decompose up, down and gate projections in FFN? Then we could randomly select a portion of singular values and only one of the matrices from the decomposition to get the resulting expert slice. We could go even further - select half of the biggest singular values and the other half randomly - capture the most important part of the transformation with enough randomness. There is a problem tough - if we pick only one of the 2 matrices, we are effectively changing the basis. Still wanted to check if it worked by some miracle. Well, it does not. Moving on.
 10. Using the standard approach by adding noise to FFN and doing the same slicing.
+11. Started with noise scaling = 0.01. Too little. Almost no difference compared to the original output. Increasing to 0.1.
+12. Still too little. Let's try 1.
+13. Long story short, 0.2 is good enough.
