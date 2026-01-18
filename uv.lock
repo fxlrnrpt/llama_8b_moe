@@ -393,6 +393,7 @@ dependencies = [
     { name = "ipykernel" },
     { name = "safetensors" },
     { name = "torch" },
+    { name = "tqdm" },
     { name = "transformers" },
 ]
 
@@ -401,6 +402,7 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "safetensors", specifier = ">=0.7.0" },
     { name = "torch", specifier = ">=2.9.1" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "transformers", specifier = ">=4.57.3" },
 ]
 
