@@ -178,10 +178,14 @@ input_ids = input_ids.to(DEVICE)
 print("Starting text generation (using sliced experts only in match_dense mode)...")
 generate(model, tokenizer, input_ids)
 
+print("Starting text generation (using learned experts only in match_dense mode)...")
+model.switch_routing("learned_only")
+generate(model, tokenizer, input_ids)
+
 # Save the model with both sliced and SVD experts
 print("Saving MoE version with SVD experts...")
 save_file(
     model.state_dict(),
-    Path(__file__).parent.joinpath("../../../../artifacts/llama3_8b_moe_svd.safetensors"),
+    Path(__file__).parent.joinpath("../../../artifacts/llama3_8b_moe_svd.safetensors"),
 )
 print("Done.")

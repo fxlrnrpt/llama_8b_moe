@@ -7,10 +7,12 @@ from torch import nn
 from core.models.dense.llama_dense_model import DenseBlock, ModelConfig
 from core.models.dense.llama_dense_model import Transformer as DenseTransformer
 
+TRouting = Literal["match_dense", "learned_only", "auto"]
+
 
 @dataclass
 class MoEModelConfig(ModelConfig):
-    routing: Literal["match_dense", "learned_only", "auto"] = "auto"
+    routing: TRouting = "auto"
     expert_intermediate_size: int = 1792  # 14336 / 8
     num_sliced_experts: int = 8
     num_learned_experts: int = 8  # TODO: define number of learned experts
@@ -61,18 +63,26 @@ class ExpertBlock(nn.Module):
 
         self.active_experts_mask = torch.tensor([False] * (self.num_sliced_experts + self.num_learned_experts))
 
-        if config.routing == "match_dense":
-            self.active_experts_mask[: self.num_sliced_experts] = True
-            self.active_experts_mask[self.num_sliced_experts :] = False
-        elif config.routing == "learned_only":
-            self.active_experts_mask[: self.num_sliced_experts] = False
-            self.active_experts_mask[self.num_sliced_experts :] = True
+        self.routing = config.routing
+        self.switch_routing(self.routing)
 
         self.experts = Experts(config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: implement learned experts logic
         return self.experts.forward(x, self.active_experts_mask)
+
+    def switch_routing(self, routing: TRouting):
+        self.routing = routing
+
+        if routing == "match_dense":
+            self.active_experts_mask[: self.num_sliced_experts] = True
+            self.active_experts_mask[self.num_sliced_experts :] = False
+        elif routing == "learned_only":
+            self.active_experts_mask[: self.num_sliced_experts] = False
+            self.active_experts_mask[self.num_sliced_experts :] = True
+        else:
+            raise ValueError(f"Unsupported routing mode: {routing}")
 
 
 class MoEBlock(DenseBlock):
@@ -85,3 +95,7 @@ class MoETransformer(DenseTransformer):
     def __init__(self, config: MoEModelConfig):
         super().__init__(config)
         self.layers = nn.ModuleList([MoEBlock(config) for _ in range(config.num_hidden_layers)])
+
+    def switch_routing(self, routing: TRouting):
+        for layer in self.layers:
+            layer.ffn.switch_routing(routing)

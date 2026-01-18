@@ -5,7 +5,7 @@ from core.models.dense.llama_dense_model import Transformer
 
 
 def generate(model: Transformer, tokenizer: PreTrainedTokenizer, initial_input_ids: torch.Tensor):
-    input_ids = initial_input_ids
+    input_ids = initial_input_ids.clone()
 
     with torch.no_grad():
         while True:
