@@ -14,7 +14,7 @@ from core.utils.device import DEVICE, DTYPE
 
 def test_logit_match(moe_safetensors_path: str, num_samples: int = 10):
     model_dir = snapshot_download(repo_id=MODEL_NAME)
-    config = MoEModelConfig(toy_mode=True)
+    config = MoEModelConfig(routing="match_dense")
 
     # Generate all samples on CPU first
     all_input_ids = [torch.randint(0, config.vocab_size, (1, config.max_seq_len)) for _ in range(num_samples)]
@@ -78,7 +78,7 @@ def test_logit_match(moe_safetensors_path: str, num_samples: int = 10):
 
 
 result = test_logit_match(
-    moe_safetensors_path=str(Path(__file__).parent.joinpath("../../../../artifacts/llama3_8b_moe.safetensors")),
+    moe_safetensors_path=str(Path(__file__).parent.joinpath("../../../artifacts/llama3_8b_moe.safetensors")),
     num_samples=5,
 )
 print("Logit match test passed. Max differences per sample:", result)

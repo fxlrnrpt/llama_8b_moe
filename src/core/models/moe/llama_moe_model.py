@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 import torch
 from torch import nn
@@ -9,8 +10,7 @@ from core.models.dense.llama_dense_model import Transformer as DenseTransformer
 
 @dataclass
 class MoEModelConfig(ModelConfig):
-    # Logit match dense model
-    toy_mode: bool = False
+    routing: Literal["match_dense", "learned_only", "auto"] = "auto"
     expert_intermediate_size: int = 1792  # 14336 / 8
     num_sliced_experts: int = 8
     num_learned_experts: int = 8  # TODO: define number of learned experts
@@ -61,9 +61,12 @@ class ExpertBlock(nn.Module):
 
         self.active_experts_mask = torch.tensor([False] * (self.num_sliced_experts + self.num_learned_experts))
 
-        if config.toy_mode:
+        if config.routing == "match_dense":
             self.active_experts_mask[: self.num_sliced_experts] = True
             self.active_experts_mask[self.num_sliced_experts :] = False
+        elif config.routing == "learned_only":
+            self.active_experts_mask[: self.num_sliced_experts] = False
+            self.active_experts_mask[self.num_sliced_experts :] = True
 
         self.experts = Experts(config)
 

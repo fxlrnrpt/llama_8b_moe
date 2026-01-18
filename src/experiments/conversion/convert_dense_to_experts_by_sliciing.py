@@ -15,7 +15,7 @@ from core.utils.sanity_check_test import get_sanity_check_input_ids
 print(f"Downloading model weights for {MODEL_NAME}...")
 model_dir = snapshot_download(repo_id=MODEL_NAME)
 
-config = MoEModelConfig(toy_mode=True)
+config = MoEModelConfig(routing="match_dense")
 model = MoETransformer(config)
 
 load_res = load_weights(model, model_dir=model_dir, dtype=DTYPE, device=DEVICE, strict=False, verbose=True)
@@ -58,5 +58,5 @@ print("Starting text generation...")
 generate(model, tokenizer, input_ids)
 
 print("Saving MoE version...")
-save_file(model.state_dict(), Path(__file__).parent.joinpath("../../../../artifacts/llama3_8b_moe.safetensors"))
+save_file(model.state_dict(), Path(__file__).parent.joinpath("../../../artifacts/llama3_8b_moe.safetensors"))
 print("Done.")
