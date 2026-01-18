@@ -65,7 +65,9 @@ def test_logit_match(moe_safetensors_path: str, num_samples: int = 10):
 
     # Compare logits on CPU
     results = []
-    for dense_logits, moe_logits in tqdm(zip(dense_logits_list, moe_logits_list), desc="Comparing logits"):
+    for dense_logits, moe_logits in tqdm(
+        zip(dense_logits_list, moe_logits_list), desc="Comparing logits", total=num_samples
+    ):
         max_diff = (dense_logits - moe_logits).abs().max().item()
         assert torch.allclose(dense_logits, moe_logits, atol=BF16_TOLERANCE_ATOL, rtol=BF16_TOLERANCE_RTOL), (
             f"Logit mismatch: max diff = {max_diff}"
