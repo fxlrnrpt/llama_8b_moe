@@ -3,14 +3,13 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from core.models.dense.llama_dense_loader import load_weights
 from core.models.dense.llama_dense_model import ModelConfig, Transformer
+from core.utils.constants import MODEL_NAME
 from core.utils.device import DEVICE, DTYPE
 from core.utils.generate import generate
 from core.utils.sanity_check_test import get_sanity_check_input_ids
 
-model_name = "meta-llama/Llama-3.1-8B-Instruct"
-
-print(f"Downloading model weights for {model_name}...")
-model_dir = snapshot_download(repo_id=model_name)
+print(f"Downloading model weights for {MODEL_NAME}...")
+model_dir = snapshot_download(repo_id=MODEL_NAME)
 
 config = ModelConfig()
 model = Transformer(config)
@@ -25,7 +24,7 @@ load_weights(
 )
 
 print("Model loaded. Downloading tokenizer...")
-tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 input_ids = get_sanity_check_input_ids(tokenizer)
 input_ids = input_ids.to(DEVICE)

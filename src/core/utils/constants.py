@@ -1,0 +1,4 @@
+MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+
+BF16_TOLERANCE_RTOL = 1e-3
+BF16_TOLERANCE_ATOL = 1e-3
