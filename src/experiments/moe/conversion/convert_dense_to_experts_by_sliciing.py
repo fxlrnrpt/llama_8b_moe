@@ -23,11 +23,12 @@ sd = load_res["state_dict"]
 
 # Convert dense FFN weights to sliced MoE weights
 num_experts = config.num_sliced_experts
-expert_size = config.sliced_expert_intermediate_size
+expert_size = config.expert_intermediate_size
 
 with torch.no_grad():
+    dense_ffns_converted = 0
     for layer_idx in range(config.num_hidden_layers):
-        sliced_ffn = model.layers[layer_idx].ffn.sliced_dense_ffn  # type: ignore[missing-attribute]
+        sliced_ffn = model.layers[layer_idx].ffn.experts  # type: ignore[missing-attribute]
 
         for proj_name in ["gate_proj", "up_proj", "down_proj"]:
             dense_key = f"layers.{layer_idx}.ffn.{proj_name}.weight"
@@ -42,7 +43,10 @@ with torch.no_grad():
                 moe_weight = dense_weight.reshape(num_experts, expert_size, config.hidden_size)
                 moe_weight = moe_weight.transpose(1, 2)
 
-            getattr(sliced_ffn, proj_name).copy_(moe_weight)
+            getattr(sliced_ffn, proj_name)[:num_experts].copy_(moe_weight)
+        dense_ffns_converted += 1
+
+    print(f"Converted {dense_ffns_converted} dense FFNs to sliced MoE FFNs.")
 
 print("Model loaded. Downloading tokenizer...")
 tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)

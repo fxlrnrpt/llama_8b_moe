@@ -11,25 +11,22 @@ from core.models.dense.llama_dense_model import Transformer as DenseTransformer
 class MoEModelConfig(ModelConfig):
     # Logit match dense model
     toy_mode: bool = False
-    sliced_expert_intermediate_size: int = 1792  # 14336 / 8
+    expert_intermediate_size: int = 1792  # 14336 / 8
     num_sliced_experts: int = 8
     num_learned_experts: int = 8  # TODO: define number of learned experts
-    learned_expert_intermediate_size: int = 1792  # 14336 / 8
 
 
-class SlicedDenseFeedForward(nn.Module):
+class Experts(nn.Module):
     def __init__(self, config: MoEModelConfig):
         super().__init__()
 
-        self.num_experts = config.num_sliced_experts
+        self.num_experts = config.num_sliced_experts + config.num_learned_experts
         self.gate_proj = nn.Parameter(
-            torch.empty(self.num_experts, config.hidden_size, config.sliced_expert_intermediate_size)
+            torch.empty(self.num_experts, config.hidden_size, config.expert_intermediate_size)
         )
-        self.up_proj = nn.Parameter(
-            torch.empty(self.num_experts, config.hidden_size, config.sliced_expert_intermediate_size)
-        )
+        self.up_proj = nn.Parameter(torch.empty(self.num_experts, config.hidden_size, config.expert_intermediate_size))
         self.down_proj = nn.Parameter(
-            torch.empty(self.num_experts, config.sliced_expert_intermediate_size, config.hidden_size)
+            torch.empty(self.num_experts, config.expert_intermediate_size, config.hidden_size)
         )
 
     def forward(self, x: torch.Tensor, expert_mask: torch.Tensor) -> torch.Tensor:
@@ -66,12 +63,13 @@ class ExpertBlock(nn.Module):
 
         if config.toy_mode:
             self.active_experts_mask[: self.num_sliced_experts] = True
+            self.active_experts_mask[self.num_sliced_experts :] = False
 
-        self.sliced_dense_ffn = SlicedDenseFeedForward(config)
+        self.experts = Experts(config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: implement learned experts logic
-        return self.sliced_dense_ffn.forward(x, self.active_experts_mask[: self.num_sliced_experts])
+        return self.experts.forward(x, self.active_experts_mask)
 
 
 class MoEBlock(DenseBlock):
