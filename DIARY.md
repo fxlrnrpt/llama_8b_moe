@@ -14,4 +14,6 @@
       - Match the granularity level with the shared "fat" expert for batched matmuls
       - Training fine-grained experts is going to be complicated. We will not be able to re-use teh existing FFN as a starting point (following Qwen 1.5). However... Pruning?
       Pros: easy to adjust memory footprint (number of active small experts) based on the memory cap. Also, better expressivity compared to 2 active "fat" experts.
-5. Keeping the fine-grained expert idea in the back of my mind. Will research details later. Implmenting the toy mode with logit match.
+5. Keeping the fine-grained expert idea in the back of my mind. Will research details later. Implementing the toy mode with logit match.
+6. Toy mode works. Logit match is perfect (0 diff). I assumed there might be some numerical non-determenism, so added small tolerance (2^-7 ~ 1e-2). It still might happen in the future once I add a real router, so keeping it in place.
+7. Examined some papers - better idea! Let's slice FFN into multiple experts along hidden dim. Then using all of the experts at once should match the output of the original FFN. WE can't train them though, but we will have a separate batch of experts for that.

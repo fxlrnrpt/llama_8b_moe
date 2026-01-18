@@ -90,4 +90,5 @@ def load_weights(
         "num_tensors_loaded": len(sd),
         "missing_keys": missing,
         "unexpected_keys": unexpected,
+        "state_dict": sd,
     }

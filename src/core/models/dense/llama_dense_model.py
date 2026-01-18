@@ -156,8 +156,11 @@ class DenseBlock(nn.Module):
         super().__init__()
         self.attn_norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.self_attn = Attention(config)
-        self.ffn = FeedForward(config)
+        self.ffn = self._create_ffn(config)
         self.ffn_norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+    def _create_ffn(self, config: ModelConfig) -> nn.Module:
+        return FeedForward(config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         residual = x

@@ -30,4 +30,5 @@ def load_moe_weights(
         "safetensors_path": safetensors_path,
         "missing_keys": missing,
         "unexpected_keys": unexpected,
+        "state_dict": sd,
     }
