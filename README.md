@@ -9,6 +9,7 @@ Below is a high-level final report. Find a detailed engineering diary [here](./D
   - [Memory vs inference speed trade-off](#memory-vs-inference-speed-trade-off)
   - [Completed Tasks](#completed-tasks)
   - [Potential next steps](#potential-next-steps)
+  - [How to run](#how-to-run)
 
 ## Architecture
 
@@ -16,9 +17,10 @@ Below is a high-level final report. Find a detailed engineering diary [here](./D
 2. Experts are created by slicing original dense FFN along its hidden dimension
 3. 8 experts are frozen and never trained to match the output of the dense model if all activated simultaniously. 
 4. 8 other experts are created by slicing original dense FFN with added noise. It should be a good starting point for tuning.
-5. Learned router with bias instead of auxiliary loss. Simpler. Does not create a mixed training objective.
-6. Token-choice routing as teh current industry standard.
-7. Experts are kept in a single tensor for batched matmuls.
+6. Learned router with bias instead of auxiliary loss. Simpler. Does not create a mixed training objective.
+7. Token-choice routing as teh current industry standard.
+8. 8 active routed experts to match the intial FFN size.
+9. Experts are kept in a single tensor for batched matmuls.
 
 ## Memory vs inference speed trade-off
 
@@ -42,3 +44,15 @@ For smaller memory footprint, we can decrease top_k (doubtful performance as we 
 - Add post-training pipeline
 - Ablations to find the best expert size
 - Ablations o compare bias-based and auxiliary-loss-based routing
+- Add support for training longer sequences (go beyond FSDP)
+- Shard experts safetensors to load only necessary chunks from disk in memory-constrained envs
+
+## How to run
+
+1. `uv sync` - installs deps
+2. Rent a single H100 machine
+3. `uv run src/tests/dense_sanity_check.py` - check dense model produced expected output
+4. `uv run src/experiments/conversion/convert_dense_to_experts_by_sliciing.py` - create a MoE version of the model
+5. `uv run src/tests/moe_logit_match.py` - test dense logit match
+6. Rent 3 x H100 machine
+7. `uv run torchrun --nproc-per-node=3 src/experiments/training/moe_expert_continuous_pretraining.py`

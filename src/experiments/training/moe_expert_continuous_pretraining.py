@@ -60,7 +60,6 @@ class ExperimentConfig:
 
     # ==================== Batch Size ====================
     # Per-GPU batch size
-    # - H100 80GB can handle batch_size=2-4 with seq_len=2048 for 8B model
     # - Effective batch size = batch_size * gradient_accumulation_steps * num_gpus
     # - With defaults: 2 * 32 * 2 = 128 samples per optimization step
     batch_size: int = 2
@@ -89,7 +88,7 @@ class ExperimentConfig:
     warmup_steps: int = 100
 
     # Total number of training steps
-    # - 10000 steps * 32 effective batch * 2048 tokens ≈ 655M tokens
+    # - 10000 steps * 128 effective batch * 2048 tokens ≈ 2B tokens
     # - Adjust based on dataset size and compute budget
     max_steps: int = 10000
 
@@ -98,7 +97,6 @@ class ExperimentConfig:
     log_interval: int = 10
 
     # How often to save checkpoints (in steps)
-    # - 1000 steps = roughly every 32K samples
     save_interval: int = 1000
 
     # Directory for saving checkpoints
@@ -130,6 +128,9 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     tokenizer.pad_token = tokenizer.eos_token
 
+    if is_main_process():
+        print(f"Tokenizer loaded. Vocab size: {len(tokenizer)}")
+
     # Initialize model with auto routing (uses router for expert selection)
     model_config = MoEModelConfig(routing="auto")
     model = MoETransformer(model_config)
@@ -144,6 +145,9 @@ def main():
         device="cpu",
         verbose=is_main_process(),
     )
+
+    # Enable gradient checkpointing to reduce memory usage
+    model.enable_gradient_checkpointing()
 
     # Configure trainable parameters (experts + router only)
     trainable_params = get_trainable_params(model)

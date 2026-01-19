@@ -4,6 +4,7 @@ from typing import Literal
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 from core.models.dense.llama_dense_model import DenseBlock, ModelConfig
 from core.models.dense.llama_dense_model import Transformer as DenseTransformer
@@ -17,7 +18,7 @@ class MoEModelConfig(ModelConfig):
     expert_intermediate_size: int = 1792  # 14336 / 8
     num_sliced_experts: int = 8
     num_learned_experts: int = 8
-    router_top_k: int = 4
+    router_top_k: int = 8
     router_bias_update_rate: float = 0.001
 
 
@@ -47,10 +48,7 @@ class BiasRouter(nn.Module):
         return top_k_weights, top_k_indices
 
     def update_bias(self, expert_counts: torch.Tensor, target_count: float):
-        """Call after each batch during training to balance expert load"""
-        if not self.training:
-            return
-        # Increase bias for underused experts, decrease for overused
+        """Update bias for load balancing."""
         deviation = target_count - expert_counts.float()
         self.expert_bias += self.bias_update_rate * deviation
 
@@ -133,6 +131,18 @@ class ExpertBlock(nn.Module):
             bias_update_rate=config.router_bias_update_rate,
         )
 
+        # Pending bias update to apply during backward
+        # Avoids conflict with gradient checkpointing recomputation
+        self._pending_bias_update: tuple[torch.Tensor, float] | None = None
+        self.register_full_backward_hook(self._backward_hook)
+
+    def _backward_hook(self, module, grad_input, grad_output):
+        """Apply pending bias update during backward pass (runs only once, not during checkpoint recomputation)."""
+        if self._pending_bias_update is not None:
+            expert_counts, target_count = self._pending_bias_update
+            self.router.update_bias(expert_counts, target_count)
+            self._pending_bias_update = None
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         _, _, hidden = x.shape
 
@@ -158,9 +168,11 @@ class ExpertBlock(nn.Module):
             out = selected_outputs * weights.unsqueeze(-1)
 
             if self.training:
+                # Schedule bias update for backward pass to keep forward deterministic
+                # (required for gradient checkpointing compatibility)
                 expert_counts = torch.bincount(indices.flatten(), minlength=self.total_num_experts)
                 target_count = indices.numel() / self.total_num_experts
-                self.router.update_bias(expert_counts, target_count)
+                self._pending_bias_update = (expert_counts.detach(), target_count)
 
         return out.sum(dim=2)
 
@@ -185,6 +197,25 @@ class MoETransformer(DenseTransformer):
     def __init__(self, config: MoEModelConfig):
         super().__init__(config)
         self.layers = nn.ModuleList([MoEBlock(config) for _ in range(config.num_hidden_layers)])
+        self.gradient_checkpointing = False
+
+    def enable_gradient_checkpointing(self):
+        """Enable gradient checkpointing to reduce memory usage during training."""
+        self.gradient_checkpointing = True
+
+    def disable_gradient_checkpointing(self):
+        """Disable gradient checkpointing."""
+        self.gradient_checkpointing = False
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.embed_tokens(x)
+        for layer in self.layers:
+            if self.gradient_checkpointing and self.training:
+                x = checkpoint(layer, x, use_reentrant=False)
+            else:
+                x = layer(x)
+        x = self.norm(x)
+        return self.lm_head(x)
 
     def switch_routing(self, routing: TRouting):
         for layer in self.layers:
