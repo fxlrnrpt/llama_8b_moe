@@ -154,7 +154,7 @@ class ExpertBlock(nn.Module):
             mask_indices_expanded = mask_indices.unsqueeze(-1).expand(-1, -1, -1, hidden)
             selected_outputs = torch.gather(out, dim=2, index=mask_indices_expanded)
 
-            # Weighted sum: [batch, seq, hidden]
+            # Weighted sum: [batch, seq, top_k, hidden]
             out = selected_outputs * weights.unsqueeze(-1)
 
             if self.training:
