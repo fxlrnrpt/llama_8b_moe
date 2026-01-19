@@ -23,3 +23,5 @@
 11. Started with noise scaling = 0.01. Too little. Almost no difference compared to the original output. Increasing to 0.1.
 12. Still too little. Let's try 1.
 13. Long story short, 0.2 is good enough.
+14. Added bias-based router. Looks cleaner than auxiliary loss if you ask me. Accroding to Deepseek should perform well. Luckily, I am not going to have enough resources and time to run proper ablations. Or unlickily. Anyhow, rolling with it.
+Side note: I wish CC wrote cleaner code. Had to re-write most of it this time :cry:

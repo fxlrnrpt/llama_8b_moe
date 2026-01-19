@@ -6,5 +6,5 @@
 - [x] Test to check the logit match 
 - [x] Try a better dense FFN replica
 - [x] Init learned experts
-- [ ] MoE router
+- [x] MoE router
 - [ ] Train learned experts
