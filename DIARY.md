@@ -25,3 +25,5 @@
 13. Long story short, 0.2 is good enough.
 14. Added bias-based router. Looks cleaner than auxiliary loss if you ask me. Accroding to Deepseek should perform well. Luckily, I am not going to have enough resources and time to run proper ablations. Or unlickily. Anyhow, rolling with it.
 Side note: I wish CC wrote cleaner code. Had to re-write most of it this time :cry:
+15. Testing the final implmentation with untrained router. Replaced router initialization for small std normal ~ nearly uniform routing after softmax. Also increased top_k to 4 to match the initial numer of weigths in dense model. Otherwise, in the routed mode (whne the router and the experts are not trained) the model produces garbage. With the new parameters the output is still far from ideal, but sill better. Also, intuitevely we at least have a chance of something reasonable without a ton of continuous pre-training becasue we match the number of dense FFN params.
+16. 

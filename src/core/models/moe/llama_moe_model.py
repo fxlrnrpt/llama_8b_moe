@@ -17,7 +17,7 @@ class MoEModelConfig(ModelConfig):
     expert_intermediate_size: int = 1792  # 14336 / 8
     num_sliced_experts: int = 8
     num_learned_experts: int = 8
-    router_top_k: int = 2
+    router_top_k: int = 4
     router_bias_update_rate: float = 0.001
 
 
@@ -27,6 +27,7 @@ class BiasRouter(nn.Module):
         self.top_k = top_k
         self.bias_update_rate = bias_update_rate
         self.gate = nn.Linear(hidden_size, num_experts, bias=False)
+        nn.init.normal_(self.gate.weight, mean=0.0, std=0.02)
 
         # Bias-based load balancing (not learned, updated dynamically)
         self.register_buffer("expert_bias", torch.zeros(num_experts))
@@ -65,7 +66,9 @@ class Experts(nn.Module):
         self.gate_proj = nn.Parameter(
             torch.empty(self.total_num_experts, config.hidden_size, config.expert_intermediate_size)
         )
-        self.up_proj = nn.Parameter(torch.empty(self.total_num_experts, config.hidden_size, config.expert_intermediate_size))
+        self.up_proj = nn.Parameter(
+            torch.empty(self.total_num_experts, config.hidden_size, config.expert_intermediate_size)
+        )
         self.down_proj = nn.Parameter(
             torch.empty(self.total_num_experts, config.expert_intermediate_size, config.hidden_size)
         )

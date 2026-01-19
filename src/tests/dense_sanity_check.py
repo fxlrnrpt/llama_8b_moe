@@ -11,6 +11,7 @@ from core.utils.sanity_check_test import get_sanity_check_input_ids
 print(f"Downloading model weights for {MODEL_NAME}...")
 model_dir = snapshot_download(repo_id=MODEL_NAME)
 
+print("Loading dense model...")
 config = ModelConfig()
 model = Transformer(config)
 
