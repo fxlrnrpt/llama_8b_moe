@@ -5,14 +5,13 @@ from safetensors.torch import load_file as safetensors_load_file
 def load_moe_weights(
     model: torch.nn.Module,
     safetensors_path: str,
-    device: torch.device | None = None,
+    device: torch.device,
     strict: bool = True,
     verbose: bool = True,
 ):
-    # Load directly to the target device (avoids CPU→GPU copy)
-    sd = safetensors_load_file(safetensors_path, device=str(device) if device else "cpu")
+    sd = safetensors_load_file(safetensors_path, device=str(device))
 
-    # Load state_dict into model
+    model.to(device)
     missing, unexpected = model.load_state_dict(sd, strict=strict, assign=True)
 
     if verbose:

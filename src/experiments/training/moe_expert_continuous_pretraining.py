@@ -141,8 +141,7 @@ def main():
     load_moe_weights(
         model,
         config.model_path,
-        dtype=torch.bfloat16,
-        device="cpu",
+        device=torch.device("cpu"),
         verbose=is_main_process(),
     )
 

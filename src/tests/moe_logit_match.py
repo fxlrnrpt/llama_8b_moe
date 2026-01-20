@@ -48,7 +48,6 @@ def test_logit_match(moe_safetensors_path: str, num_samples: int = 10):
     load_moe_weights(
         moe_model,
         safetensors_path=moe_safetensors_path,
-        dtype=DTYPE,
         device=DEVICE,
         strict=True,
         verbose=True,
