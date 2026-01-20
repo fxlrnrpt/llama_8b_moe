@@ -4,7 +4,6 @@ from typing import Literal
 import torch
 import torch.nn.functional as F
 from torch import nn
-from torch.utils.checkpoint import checkpoint
 
 from core.models.dense.llama_dense_model import DenseBlock, ModelConfig
 from core.models.dense.llama_dense_model import Transformer as DenseTransformer
@@ -197,25 +196,6 @@ class MoETransformer(DenseTransformer):
     def __init__(self, config: MoEModelConfig):
         super().__init__(config)
         self.layers = nn.ModuleList([MoEBlock(config) for _ in range(config.num_hidden_layers)])
-        self.gradient_checkpointing = False
-
-    def enable_gradient_checkpointing(self):
-        """Enable gradient checkpointing to reduce memory usage during training."""
-        self.gradient_checkpointing = True
-
-    def disable_gradient_checkpointing(self):
-        """Disable gradient checkpointing."""
-        self.gradient_checkpointing = False
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.embed_tokens(x)
-        for layer in self.layers:
-            if self.gradient_checkpointing and self.training:
-                x = checkpoint(layer, x, use_reentrant=False)
-            else:
-                x = layer(x)
-        x = self.norm(x)
-        return self.lm_head(x)
 
     def switch_routing(self, routing: TRouting):
         for layer in self.layers:

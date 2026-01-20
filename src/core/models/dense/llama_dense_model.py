@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.checkpoint import checkpoint
 
 
 @dataclass
@@ -180,10 +181,14 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList([DenseBlock(config) for _ in range(config.num_hidden_layers)])
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.gradient_checkpointing = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.embed_tokens(x)  # [bsz, seq, hidden]
         for layer in self.layers:
-            x = layer(x)
+            if self.gradient_checkpointing and self.training:
+                x = checkpoint(layer, x, use_reentrant=False)
+            else:
+                x = layer(x)
         x = self.norm(x)
         return self.lm_head(x)
