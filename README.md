@@ -55,4 +55,4 @@ For smaller memory footprint, we can decrease top_k (doubtful performance as we 
 4. `uv run src/experiments/conversion/convert_dense_to_experts_by_sliciing.py` - create a MoE version of the model
 5. `uv run src/tests/moe_logit_match.py` - test dense logit match
 6. Rent 3 x H100 machine
-7. `uv run torchrun --nproc-per-node=3 src/experiments/training/moe_expert_continuous_pretraining.py`
+7. `uv run torchrun --nproc-per-node=3 src/experiments/training/moe_expert_continuous_pretraining.py` - start continuous pre-training of the learned experts
