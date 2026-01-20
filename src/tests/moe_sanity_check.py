@@ -16,7 +16,6 @@ model = MoETransformer(config)
 load_moe_weights(
     model,
     safetensors_path=str(Path(__file__).parent.joinpath("../../artifacts/llama3_8b_moe.safetensors").resolve()),
-    dtype=DTYPE,
     device=DEVICE,
     strict=True,
     verbose=True,

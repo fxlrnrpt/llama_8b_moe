@@ -29,6 +29,9 @@ For smaller memory footprint, we can decrease top_k (doubtful performance as we 
 
 ## Completed Tasks
 
+> Note: you can look at what I have been given as astarting point [here (first commit)](https://github.com/fxlrnrpt/llama_8b_moe/commit/37fd8622bc94ad63b2072b8c198f22b457d6e12e)
+
+
 - [x] Toy mode that matches the output of the dense model
 - [x] Test to check the logit match 
 - [x] Try a better dense FFN replica
