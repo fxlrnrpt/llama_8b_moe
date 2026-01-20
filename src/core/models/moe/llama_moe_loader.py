@@ -10,9 +10,8 @@ def load_moe_weights(
     verbose: bool = True,
 ):
     sd = safetensors_load_file(safetensors_path, device=str(device))
-
-    model.to(device)
     missing, unexpected = model.load_state_dict(sd, strict=strict, assign=True)
+    model.to(device)
 
     if verbose:
         print("=== load_moe_weights ===")
